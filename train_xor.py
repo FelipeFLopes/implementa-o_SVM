@@ -1,12 +1,17 @@
+import itertools
+
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import confusion_matrix
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import train_test_split
 
+
 N_ITER = 10
 N_SAMPLES = 2000
+
 
 def generate_xor_experiment():
     set_random_seed()
@@ -14,10 +19,11 @@ def generate_xor_experiment():
     xor_dataset = make_xor_dataset(N_SAMPLES)
 
     samples = xor_dataset["samples"]
-    y = xor_dataset["classes"]
+    classes = xor_dataset["classes"]
+    unique_classes = np.unique(classes)
 
     samples_train, samples_test, classes_train, classes_test = train_test_split(
-        samples, y, test_size=0.33, random_state=42)
+        samples, classes, test_size=0.33, random_state=42)
 
     centers = generate_centers(samples_train, n_clusters=7)
     kernelized_inputs_train = apply_rbf_kernel(samples_train, centers, gamma=5)
@@ -32,13 +38,21 @@ def generate_xor_experiment():
     svm_output_test = model.decision_function(kernelized_inputs_test)
 
     save_array_csv(centers, file_name="results/centers_xor_sw.csv")
-    save_array_csv(weights_history, file_name="results/weight_history_xor_sw.csv")
+    save_array_csv(weights_history,
+                   file_name="results/weight_history_xor_sw.csv")
     save_array_csv(pred_history, file_name="results/pred_history_xor_sw.csv")
     save_array_csv(svm_output_history,
                    file_name="results/svm_output_history_xor_sw.csv")
     save_array_csv(pred_test, file_name="results/pred_test_xor_sw.csv")
     save_array_csv(svm_output_test,
                    file_name="results/svm_output_test_xor_sw.csv")
+
+    cmf_train = confusion_matrix(classes_train, pred_history[-1])
+
+    cmf_test = confusion_matrix(classes_test, pred_test)
+
+    plot_confusion_matrix(cmf_train, unique_classes)
+    plot_confusion_matrix(cmf_test, unique_classes)
 
     print(
         f"final train accuracy was {model.score(kernelized_inputs_train, classes_train)}")
@@ -153,6 +167,33 @@ def plot_dataset_3d(samples, classes):
     ax = fig.add_subplot(111, projection='3d')
 
     ax.scatter(x, y, z, c=colors)
+    plt.show()
+
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    #plt.xticks(tick_marks, classes, rotation=45)
+    plt.xticks(tick_marks, classes)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = 3*cm.max()/4.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
     plt.show()
 
 

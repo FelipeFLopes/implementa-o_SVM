@@ -1,11 +1,12 @@
 import numpy as np
 from sklearn.datasets import load_iris
-from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 from train_xor import (create_sgd_classifier, generate_centers,
                        apply_rbf_kernel, partial_weights_and_prediction,
-                       save_array_csv)
+                       save_array_csv, plot_confusion_matrix)
 
 N_ITER = 10
 
@@ -16,10 +17,11 @@ def train_iris():
     iris_dataset = make_iris_dataset(iris)
 
     samples = iris_dataset["samples"]
-    y = iris_dataset["classes"]
+    classes = iris_dataset["classes"]
+    classes_labels = ["setosa", "versicolor"]
 
     samples_train, samples_test, classes_train, classes_test = train_test_split(
-        samples, y, test_size=0.33, random_state=42)
+        samples, classes, test_size=0.33, random_state=42)
 
     centers = generate_centers(samples_train, n_clusters=7)
     kernelized_inputs_train = apply_rbf_kernel(samples_train, centers, gamma=5)
@@ -34,13 +36,21 @@ def train_iris():
     svm_output_test = model.decision_function(kernelized_inputs_test)
 
     save_array_csv(centers, file_name="results/centers_iris_sw.csv")
-    save_array_csv(weights_history, file_name="results/weight_history_iris_sw.csv")
+    save_array_csv(weights_history,
+                   file_name="results/weight_history_iris_sw.csv")
     save_array_csv(pred_history, file_name="results/pred_history_iris_sw.csv")
     save_array_csv(svm_output_history,
                    file_name="results/svm_output_history_iris_sw.csv")
     save_array_csv(pred_test, file_name="results/pred_test_iris_sw.csv")
     save_array_csv(svm_output_test,
                    file_name="results/svm_output_test_iris_sw.csv")
+
+    cmf_train = confusion_matrix(classes_train, pred_history[-1])
+
+    cmf_test = confusion_matrix(classes_test, pred_test)
+
+    plot_confusion_matrix(cmf_train, classes_labels)
+    plot_confusion_matrix(cmf_test, classes_labels)
 
     print(
         f"final train accuracy was {model.score(kernelized_inputs_train, classes_train)}")
@@ -75,6 +85,7 @@ def _remove_virginica(samples, y, target_names):
     target_without_virginica = y[different_from_virginica].astype(np.float32)
     samples_without_virginica = samples[different_from_virginica].astype(
         np.float32)
+    labels_without_virginica = target_names != virginica_index
 
     return samples_without_virginica, target_without_virginica
 
