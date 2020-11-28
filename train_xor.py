@@ -1,32 +1,49 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
-from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.linear_model import SGDClassifier
+from sklearn.metrics.pairwise import rbf_kernel
+from sklearn.model_selection import train_test_split
 
+N_ITER = 10
+N_SAMPLES = 2000
 
 def generate_xor_experiment():
     set_random_seed()
 
-    xor_dataset = make_xor_dataset(2000)
+    xor_dataset = make_xor_dataset(N_SAMPLES)
 
     samples = xor_dataset["samples"]
-    centers = generate_centers(samples, n_clusters=7)
-    kernelized_inputs = apply_rbf_kernel(samples, centers, gamma=5)
+    y = xor_dataset["classes"]
+
+    samples_train, samples_test, classes_train, classes_test = train_test_split(
+        samples, y, test_size=0.33, random_state=42)
+
+    centers = generate_centers(samples_train, n_clusters=7)
+    kernelized_inputs_train = apply_rbf_kernel(samples_train, centers, gamma=5)
+    kernelized_inputs_test = apply_rbf_kernel(samples_test, centers, gamma=5)
 
     model = create_sgd_classifier(alpha=0.001, learning_rate=0.7)
 
-    n_iter = 10
-    y = xor_dataset["classes"]
+    weights_history, pred_history, svm_output_history = partial_weights_and_prediction(
+        kernelized_inputs_train, classes_train, model, N_ITER)
 
-    weights_history, pred_history = partial_weights_and_prediction(
-        kernelized_inputs, y, model, n_iter)
+    pred_test = model.predict(kernelized_inputs_test)
+    svm_output_test = model.decision_function(kernelized_inputs_test)
 
-    save_array_csv(centers, file_name="centers_xor.csv")
-    save_array_csv(weights_history, file_name="weight_history_xor.csv")
-    save_array_csv(pred_history, file_name="pred_history_xor.csv")
+    save_array_csv(centers, file_name="results/centers_xor_sw.csv")
+    save_array_csv(weights_history, file_name="results/weight_history_xor_sw.csv")
+    save_array_csv(pred_history, file_name="results/pred_history_xor_sw.csv")
+    save_array_csv(svm_output_history,
+                   file_name="results/svm_output_history_xor_sw.csv")
+    save_array_csv(pred_test, file_name="results/pred_test_xor_sw.csv")
+    save_array_csv(svm_output_test,
+                   file_name="results/svm_output_test_xor_sw.csv")
 
-    print(f"final accuracy was {model.score(kernelized_inputs, y)}")
+    print(
+        f"final train accuracy was {model.score(kernelized_inputs_train, classes_train)}")
+    print(
+        f"final test accuracy was {model.score(kernelized_inputs_test, classes_test)}")
 
 
 def set_random_seed(seed=42):
@@ -87,18 +104,21 @@ def partial_weights_and_prediction(X, y, model, n_iter):
 
     weights_history = []
     pred_history = []
+    svm_output_history = []
 
     for _ in range(n_iter):
 
         _perfome_one_epoch(model, X, y, classes)
 
         new_weights = obtain_weights_and_bias(model)
+        new_output = model.decision_function(X)
         new_pred = model.predict(X)
 
         weights_history.append(new_weights)
+        svm_output_history.append(new_output)
         pred_history.append(new_pred)
 
-    return weights_history, pred_history
+    return weights_history, pred_history, svm_output_history
 
 
 def _perfome_one_epoch(model, X, y, classes):
