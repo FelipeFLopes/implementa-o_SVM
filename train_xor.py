@@ -37,14 +37,27 @@ def generate_xor_experiment():
     pred_test = model.predict(kernelized_inputs_test)
     svm_output_test = model.decision_function(kernelized_inputs_test)
 
+    save_array_csv(samples_train, file_name="results/samples_train_xor.csv")
+    save_array_csv(samples_test, file_name="results/samples_test_xor.csv")
+
+    save_array_csv(classes_train, file_name="results/classes_train_xor.csv")
+    save_array_csv(classes_test, file_name="results/classes_test_xor.csv")
+
+    save_array_csv(kernelized_inputs_train,
+                   file_name="results/kernelized_inputs_train_xor.csv")
+    save_array_csv(kernelized_inputs_test,
+                   file_name="results/kernelized_inputs_test_xor.csv")
+
     save_array_csv(centers, file_name="results/centers_xor_sw.csv")
     save_array_csv(weights_history,
                    file_name="results/weight_history_xor_sw.csv")
+
     save_array_csv(pred_history, file_name="results/pred_history_xor_sw.csv")
     save_array_csv(svm_output_history,
                    file_name="results/svm_output_history_xor_sw.csv")
+
     save_array_csv(pred_test, file_name="results/pred_test_xor_sw.csv")
-    save_array_csv(svm_output_test,
+    save_array_csv([svm_output_test],
                    file_name="results/svm_output_test_xor_sw.csv")
 
     cmf_train = confusion_matrix(classes_train, pred_history[-1])
@@ -172,14 +185,44 @@ def plot_dataset_3d(samples, classes):
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
-                          title='Confusion matrix',
+                          title='',
                           cmap=plt.cm.Blues):
 
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.rc('xtick', labelsize='x-small')
+    plt.rc('ytick', labelsize='x-small')
+
+    fig, ax = plt.subplots(figsize=[3, 3], dpi=300)
+    plt.imshow(cm, interpolation='antialiased', cmap=cmap)
     plt.title(title)
-    plt.colorbar()
     tick_marks = np.arange(len(classes))
-    #plt.xticks(tick_marks, classes, rotation=45)
+    plt.xticks(tick_marks, classes)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = 3*cm.max()/4.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+    plt.show()
+
+
+def build_confusion_matrix_plot(cm, classes,
+                                normalize=False,
+                                title='',
+                                cmap=plt.cm.Blues):
+
+    plt.rcParams["font.serif"] = "Times"
+    plt.rc('xtick', labelsize='x-small')
+    plt.rc('ytick', labelsize='x-small')
+
+    fig, ax = plt.subplots(figsize=[4, 4], dpi=300)
+    plt.imshow(cm, interpolation='antialiased', cmap=cmap)
+    tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes)
     plt.yticks(tick_marks, classes)
 
@@ -194,7 +237,7 @@ def plot_confusion_matrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
-    plt.show()
+    return fig
 
 
 if __name__ == "__main__":
