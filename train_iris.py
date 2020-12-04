@@ -35,14 +35,27 @@ def train_iris():
     pred_test = model.predict(kernelized_inputs_test)
     svm_output_test = model.decision_function(kernelized_inputs_test)
 
+    save_array_csv(samples_train, file_name="results/samples_train_iris.csv")
+    save_array_csv(samples_test, file_name="results/samples_test_iris.csv")
+
+    save_array_csv(classes_train, file_name="results/classes_train_iris.csv")
+    save_array_csv(classes_test, file_name="results/classes_test_iris.csv")
+
+    save_array_csv(kernelized_inputs_train,
+                   file_name="results/kernelized_inputs_train_iris.csv")
+    save_array_csv(kernelized_inputs_test,
+                   file_name="results/kernelized_inputs_test_iris.csv")
+
     save_array_csv(centers, file_name="results/centers_iris_sw.csv")
     save_array_csv(weights_history,
                    file_name="results/weight_history_iris_sw.csv")
+
     save_array_csv(pred_history, file_name="results/pred_history_iris_sw.csv")
     save_array_csv(svm_output_history,
                    file_name="results/svm_output_history_iris_sw.csv")
-    save_array_csv(pred_test, file_name="results/pred_test_iris_sw.csv")
-    save_array_csv(svm_output_test,
+
+    save_array_csv([pred_test], file_name="results/pred_test_iris_sw.csv")
+    save_array_csv([svm_output_test],
                    file_name="results/svm_output_test_iris_sw.csv")
 
     cmf_train = confusion_matrix(classes_train, pred_history[-1])
